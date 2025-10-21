@@ -1,5 +1,6 @@
 package ru.hogwarts.school.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -17,6 +18,10 @@ public class Student {
     @Column(name = "age", nullable = false)
     private int age;
 
+    @ManyToOne
+    @JoinColumn(name = "faculty_id")
+    @JsonIgnore // чтобы избежать циклических ссылок при сериализации JSON
+    private Faculty faculty;
 
     public Student() {
     }
@@ -31,7 +36,6 @@ public class Student {
         this.name = name;
         this.age = age;
     }
-
 
     public Long getId() {
         return id;
@@ -57,6 +61,14 @@ public class Student {
         this.age = age;
     }
 
+    public Faculty getFaculty() {
+        return faculty;
+    }
+
+    public void setFaculty(Faculty faculty) {
+        this.faculty = faculty;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -76,6 +88,7 @@ public class Student {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", age=" + age +
+                ", faculty=" + (faculty != null ? faculty.getName() : "null") +
                 '}';
     }
 }
