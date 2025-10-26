@@ -2,12 +2,12 @@ package ru.hogwarts.school.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.hogwarts.school.model.Faculty;
+import ru.hogwarts.school.exception.BadRequestException;
+import ru.hogwarts.school.exception.NotFoundException;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.StudentRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class StudentService {
@@ -19,30 +19,37 @@ public class StudentService {
     }
 
     public Student createStudent(Student student) {
+        if (student.getName() == null || student.getName().isBlank()) {
+            throw new BadRequestException("Student name cannot be null or empty");
+        }
+        if (student.getAge() <= 0) {
+            throw new BadRequestException("Student age must be positive");
+        }
         return studentRepository.save(student);
     }
 
     public Student getStudentById(Long id) {
-        Optional<Student> student = studentRepository.findById(id);
-        return student.orElse(null);
+        return studentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Student not found with id: " + id));
     }
 
     public Student updateStudent(Long id, Student student) {
-        Optional<Student> existingStudent = studentRepository.findById(id);
-        if (existingStudent.isPresent()) {
-            student.setId(id);
-            return studentRepository.save(student);
+        Student existingStudent = getStudentById(id); // Будет брошено исключение если не найден
+
+        if (student.getName() != null && !student.getName().isBlank()) {
+            existingStudent.setName(student.getName());
         }
-        return null;
+        if (student.getAge() > 0) {
+            existingStudent.setAge(student.getAge());
+        }
+
+        return studentRepository.save(existingStudent);
     }
 
     public Student deleteStudent(Long id) {
-        Optional<Student> student = studentRepository.findById(id);
-        if (student.isPresent()) {
-            studentRepository.deleteById(id);
-            return student.get();
-        }
-        return null;
+        Student student = getStudentById(id); // Будет брошено исключение если не найден
+        studentRepository.deleteById(id);
+        return student;
     }
 
     public List<Student> getAllStudents() {
@@ -50,26 +57,9 @@ public class StudentService {
     }
 
     public List<Student> getStudentsByAge(int age) {
+        if (age <= 0) {
+            throw new BadRequestException("Age must be positive");
+        }
         return studentRepository.findByAge(age);
-    }
-
-    public List<Student> getStudentsByAgeBetween(int minAge, int maxAge) {
-        return studentRepository.findByAgeBetween(minAge, maxAge);
-    }
-
-    public List<Student> getStudentsByNameContains(String namePart) {
-        return studentRepository.findByNameContainingIgnoreCase(namePart);
-    }
-
-    public List<Student> getStudentsByAgeLessThanId() {
-        return studentRepository.findByAgeLessThanIdCustom();
-    }
-
-    public List<Student> getStudentsOrderedByAge() {
-        return studentRepository.findAllByOrderByAgeAsc();
-    }
-    public Faculty getStudentFaculty(Long studentId) {
-        Student student = getStudentById(studentId);
-        return student != null ? student.getFaculty() : null;
     }
 }

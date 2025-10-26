@@ -1,8 +1,7 @@
 package ru.hogwarts.school.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
+import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,15 +12,19 @@ public class Faculty {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Faculty name is required")
     @Column(name = "name", nullable = false, unique = true)
     private String name;
 
+    @NotBlank(message = "Faculty color is required")
     @Column(name = "color", nullable = false)
     private String color;
 
-    @OneToMany(mappedBy = "faculty", fetch = FetchType.LAZY)
-    @JsonIgnore // чтобы избежать циклических ссылок при сериализации JSON
+
+    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Student> students;
+
+
 
     public Faculty() {
     }
@@ -74,7 +77,9 @@ public class Faculty {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Faculty faculty = (Faculty) o;
-        return Objects.equals(id, faculty.id) && Objects.equals(name, faculty.name) && Objects.equals(color, faculty.color);
+        return Objects.equals(id, faculty.id) &&
+                Objects.equals(name, faculty.name) &&
+                Objects.equals(color, faculty.color);
     }
 
     @Override
@@ -88,7 +93,6 @@ public class Faculty {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", color='" + color + '\'' +
-                ", studentsCount=" + (students != null ? students.size() : 0) +
                 '}';
     }
 }

@@ -2,12 +2,12 @@ package ru.hogwarts.school.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.hogwarts.school.exception.BadRequestException;
+import ru.hogwarts.school.exception.NotFoundException;
 import ru.hogwarts.school.model.Faculty;
-import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.FacultyRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FacultyService {
@@ -19,30 +19,50 @@ public class FacultyService {
     }
 
     public Faculty createFaculty(Faculty faculty) {
+        if (faculty.getName() == null || faculty.getName().isBlank()) {
+            throw new BadRequestException("Faculty name cannot be null or empty");
+        }
+        if (faculty.getColor() == null || faculty.getColor().isBlank()) {
+            throw new BadRequestException("Faculty color cannot be null or empty");
+        }
+
+        // Проверка на уникальность имени
+        if (facultyRepository.findByNameIgnoreCase(faculty.getName()).isPresent()) {
+            throw new BadRequestException("Faculty with name '" + faculty.getName() + "' already exists");
+        }
+
         return facultyRepository.save(faculty);
     }
 
     public Faculty getFacultyById(Long id) {
-        Optional<Faculty> faculty = facultyRepository.findById(id);
-        return faculty.orElse(null);
+        return facultyRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Faculty not found with id: " + id));
     }
 
     public Faculty updateFaculty(Long id, Faculty faculty) {
-        Optional<Faculty> existingFaculty = facultyRepository.findById(id);
-        if (existingFaculty.isPresent()) {
-            faculty.setId(id);
-            return facultyRepository.save(faculty);
+        Faculty existingFaculty = getFacultyById(id); // Будет брошено исключение если не найден
+
+        if (faculty.getName() != null && !faculty.getName().isBlank()) {
+            // Проверяем, что новое имя не конфликтует с другими факультетами
+            facultyRepository.findByNameIgnoreCase(faculty.getName())
+                    .ifPresent(f -> {
+                        if (!f.getId().equals(id)) {
+                            throw new BadRequestException("Faculty with name '" + faculty.getName() + "' already exists");
+                        }
+                    });
+            existingFaculty.setName(faculty.getName());
         }
-        return null;
+        if (faculty.getColor() != null && !faculty.getColor().isBlank()) {
+            existingFaculty.setColor(faculty.getColor());
+        }
+
+        return facultyRepository.save(existingFaculty);
     }
 
     public Faculty deleteFaculty(Long id) {
-        Optional<Faculty> faculty = facultyRepository.findById(id);
-        if (faculty.isPresent()) {
-            facultyRepository.deleteById(id);
-            return faculty.get();
-        }
-        return null;
+        Faculty faculty = getFacultyById(id); // Будет брошено исключение если не найден
+        facultyRepository.deleteById(id);
+        return faculty;
     }
 
     public List<Faculty> getAllFaculties() {
@@ -50,14 +70,9 @@ public class FacultyService {
     }
 
     public List<Faculty> getFacultiesByColor(String color) {
+        if (color == null || color.isBlank()) {
+            throw new BadRequestException("Color cannot be null or empty");
+        }
         return facultyRepository.findByColor(color);
-    }
-
-    public List<Faculty> getFacultiesByNameOrColor(String searchString) {
-        return facultyRepository.findByNameIgnoreCaseOrColorIgnoreCase(searchString, searchString);
-    }
-    public List<Student> getFacultyStudents(Long facultyId) {
-        Faculty faculty = getFacultyById(facultyId);
-        return faculty != null ? faculty.getStudents() : null;
     }
 }
