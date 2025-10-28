@@ -2,7 +2,8 @@ package ru.hogwarts.school.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
+import jakarta.validation.constraints.Size;
+
 import java.util.Objects;
 
 @Entity
@@ -13,18 +14,14 @@ public class Faculty {
     private Long id;
 
     @NotBlank(message = "Faculty name is required")
-    @Column(name = "name", nullable = false, unique = true)
+    @Size(min = 2, max = 50, message = "Faculty name must be between 2 and 50 characters")
+    @Column(name = "name", nullable = false, unique = true, length = 50)
     private String name;
 
     @NotBlank(message = "Faculty color is required")
-    @Column(name = "color", nullable = false)
+    @Size(min = 2, max = 30, message = "Faculty color must be between 2 and 30 characters")
+    @Column(name = "color", nullable = false, length = 30)
     private String color;
-
-
-    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Student> students;
-
-
 
     public Faculty() {
     }
@@ -62,14 +59,6 @@ public class Faculty {
 
     public void setColor(String color) {
         this.color = color;
-    }
-
-    public List<Student> getStudents() {
-        return students;
-    }
-
-    public void setStudents(List<Student> students) {
-        this.students = students;
     }
 
     @Override
