@@ -46,10 +46,17 @@ public class StudentController {
         List<Student> students = studentService.getAllStudents();
         return ResponseEntity.ok(students);
     }
-
     @GetMapping("/age/{age}")
     public ResponseEntity<List<Student>> getStudentsByAge(@PathVariable int age) {
         List<Student> students = studentService.getStudentsByAge(age);
+        return ResponseEntity.ok(students);
+    }
+
+    @GetMapping("/age-range")
+    public ResponseEntity<List<Student>> getStudentsByAgeRange(
+            @RequestParam Integer minAge,
+            @RequestParam Integer maxAge) {
+        List<Student> students = studentService.getStudentsByAgeRange(minAge, maxAge);
         return ResponseEntity.ok(students);
     }
 }

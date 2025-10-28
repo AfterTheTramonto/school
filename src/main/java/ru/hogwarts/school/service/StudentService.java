@@ -62,4 +62,11 @@ public class StudentService {
         }
         return studentRepository.findByAge(age);
     }
+
+    public List<Student> getStudentsByAgeRange(Integer minAge, Integer maxAge) {
+        if (minAge == null || maxAge == null || minAge < 0 || maxAge < 0 || minAge > maxAge) {
+            throw new BadRequestException("Invalid age range");
+        }
+        return studentRepository.findByAgeBetween(minAge, maxAge);
+    }
 }
